@@ -1,7 +1,6 @@
 <meta charset="utf-8" />
 <title>西貢踩點手冊（真地圖版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="robots" content="noindex, nofollow" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -140,7 +139,7 @@
 
   /* ---- real map view ---- */
   #leafletMap{
-    width:100%;height:62vh;min-height:360px;max-height:540px;
+    width:100%;height:calc(100dvh - 210px);min-height:460px;
     border:1px solid var(--line);border-radius:10px;margin-top:14px;
     background:var(--paper-sunk);
     position:relative;
@@ -712,6 +711,9 @@
         if(p.note) html += '<div class="popup-note">' + p.note + '</div>';
         html += '<a class="popup-link" href="' + p.link + '" target="_blank" rel="noopener noreferrer">開地圖 ↗</a>';
         marker.bindPopup(html);
+        marker.on("click", function(){
+          leafletMap.setView([p.lat, p.lng], Math.max(leafletMap.getZoom(), 17), {animate:true});
+        });
         p.marker = marker;
       });
 
