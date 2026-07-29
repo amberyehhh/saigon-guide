@@ -65,6 +65,8 @@
   .title-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;text-wrap:balance;}
   h1{font-family:Georgia,"Iowan Old Style","Noto Serif TC",serif;font-size:1.4rem;font-weight:700;margin:0;letter-spacing:0.01em;}
   .progress{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;font-size:0.78rem;color:var(--jade);white-space:nowrap;}
+  .langbtn{flex:0 0 auto;padding:6px 12px;min-height:32px;border-radius:100px;border:1px solid var(--jade);background:transparent;color:var(--jade);font-size:0.72rem;font-weight:700;cursor:pointer;}
+  .langbtn:active{background:var(--jade);color:var(--paper-raised);}
   .subtitle{margin:4px 0 10px;font-size:0.78rem;color:var(--done-ink);}
 
   .sharebar{display:flex;gap:8px;margin-bottom:10px;}
@@ -199,18 +201,21 @@
 <header class="top">
   <div class="inner">
     <div class="title-row">
-      <h1>西貢踩點手冊</h1>
-      <div class="progress mono" id="progress">0 / 0</div>
+      <h1 id="pageTitle">西貢踩點手冊</h1>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="langbtn" id="langBtn">VI</button>
+        <div class="progress mono" id="progress">0 / 0</div>
+      </div>
     </div>
-    <p class="subtitle">胡志明市吃喝購物地點｜真地圖版・需要網路載入街道圖磚</p>
+    <p class="subtitle" id="pageSubtitle">胡志明市吃喝購物地點｜真地圖版・需要網路載入街道圖磚</p>
     <div class="sharebar">
-      <button class="sharebtn" id="copyTextBtn"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="4" width="10" height="13" rx="1.5"/><rect x="7.5" y="2" width="5" height="3" rx="1"/></svg> 複製地點清單文字</button>
-      <button class="sharebtn" id="exportBtn"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v9"/><path d="M6 8l4 4 4-4"/><path d="M4 16h12"/></svg> 匯出我的行程</button>
+      <button class="sharebtn" id="copyTextBtn"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="4" width="10" height="13" rx="1.5"/><rect x="7.5" y="2" width="5" height="3" rx="1"/></svg> <span id="copyTextLabel">複製地點清單文字</span></button>
+      <button class="sharebtn" id="exportBtn"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v9"/><path d="M6 8l4 4 4-4"/><path d="M4 16h12"/></svg> <span id="exportLabel">匯出我的行程</span></button>
     </div>
     <div class="tabs">
-      <button class="tab active" data-view="list">清單</button>
-      <button class="tab" data-view="map">地圖</button>
-      <button class="tab" data-view="itinerary">行程</button>
+      <button class="tab active" data-view="list" id="tabList">清單</button>
+      <button class="tab" data-view="map" id="tabMap">地圖</button>
+      <button class="tab" data-view="itinerary" id="tabItinerary">行程</button>
     </div>
     <div class="search-row">
       <input class="search" id="search" type="text" placeholder="搜尋地點、類型或筆記…" />
@@ -228,7 +233,7 @@
 
   <div class="view" id="view-map">
     <div id="leafletMap"></div>
-    <p class="map-offline-note">地圖需要網路連線讀取街道圖磚（OpenStreetMap），離線時會是空白</p>
+    <p class="map-offline-note" id="mapOfflineNote">地圖需要網路連線讀取街道圖磚（OpenStreetMap），離線時會是空白</p>
     <div class="map-legend" id="mapLegend"></div>
     <p class="map-note" id="mapNote"></p>
   </div>
@@ -240,7 +245,7 @@
 
 </div>
 
-<footer>共 <span id="totalCount" class="mono">0</span> 個地點・資料存在這台裝置的瀏覽器裡・把這個檔案傳給旅伴，各自打開記錄</footer>
+<footer><span id="totalCount" class="mono">0</span><span id="footerText"> 個地點・資料存在這台裝置的瀏覽器裡・把這個檔案傳給旅伴，各自打開記錄</span></footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -320,6 +325,115 @@
     }
   ];
 
+  /* ---------------- I18N ---------------- */
+  var LANG_KEY = "saigon-guide-lang";
+  var lang = localStorage.getItem(LANG_KEY) || "zh";
+
+  var VI_TYPE = {
+    "選物店":"Cửa hàng đồ tuyển chọn", "禮服店":"Tiệm váy dạ hội", "越南料理":"Món Việt",
+    "咖啡":"Cà phê", "甜點店":"Tiệm bánh ngọt", "服飾":"Thời trang", "遊戲":"Khu vui chơi",
+    "文創":"Đồ sáng tạo", "越南麵包":"Bánh mì", "河粉":"Phở", "coworking space":"Không gian làm việc chung",
+    "禮品店":"Cửa hàng quà tặng", "生活風格禮品":"Quà tặng phong cách sống", "小吃":"Món ăn vặt",
+    "香水體驗店":"Trải nghiệm nước hoa", "女裝":"Thời trang nữ", "手作店":"Đồ thủ công",
+    "甜點":"Bánh ngọt", "麵包店":"Tiệm bánh mì", "服飾品牌":"Thương hiệu thời trang", "服飾門市":"Cửa hàng thời trang"
+  };
+  var VI_NOTE = {
+    "ngâm CAFE":"Croissant ngon, croissant matcha sữa ngon",
+    "Bếp Cuốn Sài Gòn":"Chả giò, bánh trứng giòn",
+    "The 350F – Nguyễn Trãi":"Tiramisu",
+    "Ka's clothing":"Thời trang phong cách Hàn đẹp",
+    "Bánh Mì Huynh Hoa":"Tiệm bánh mì lâu đời",
+    "Cà phê Linh":"Cà phê muối",
+    "Phở Việt Nam":"Được Michelin đề xuất",
+    "Saigon Eco Craft":"Muỗng đẹp, hơi đắt, chỉ nhận tiền mặt",
+    "em.G clothé":"Phong cách tối giản cao cấp",
+    "THE MERX I":"Áo sơ mi đẹp",
+    "HUONG Boutique – Union Square":"Thời trang nữ tối giản bền vững, váy dạ hội",
+    "GIA STUDIOS HCM":"Thời trang nữ tối giản",
+    "Hoa Túc Saigon":"Chả giò tôm trứng, cơm chiên cua",
+    "Bánh Canh Cua Út Thảo":"Bánh canh cua",
+    "Nicotin Cafe II":"Quán cà phê nhà cổ kiểu Nhật",
+    "Little HaNoi Egg Coffee (Yersin)":"Bánh mì trứng, bánh mì xoài, cà phê trứng",
+    "Morra Perfume Experience Center":"Khắc chữ/ảnh/cung hoàng đạo/chữ ký theo yêu cầu; gợi ý No.33 gỗ thuốc lá, No.42 mè xạ hương trắng, No.43 cam quýt đa dụng",
+    "Beanthere Cafe – Hồ Hảo Hớn":"Quán cà phê biệt thự cổ",
+    "JUBIN Studio ｜ Château JUBIN":"Váy đầm đẹp",
+    "Nhâm Coffee":"Bánh mì bơ + cà phê sữa đá",
+    "L'ESPOIR":"Thời trang nữ tối giản bền vững, váy dạ hội",
+    "Banan Patisserie Ngo Quang Huy":"Bánh flan",
+    "Micro Boulangerie":"Bánh mì Pháp đậu đỏ bơ",
+    "Breadventure":"Bánh mì Pháp bơ",
+    "LIBÉ":"Chỉ có trang web, chưa rõ địa chỉ cửa hàng",
+    "Oliu Sourdough – Coffee":"Quán cà phê đẹp (ở Hà Nội, không phải TP.HCM)"
+  };
+  var VI_AREA = {
+    "Xuân Hòa 核心區": {name:"Khu trung tâm Xuân Hòa", desc:"Khu vực nhỏ, đi bộ được, thích hợp dành cả ngày"},
+    "Phạm Ngũ Lão／The 350F 小街區": {name:"Khu phố nhỏ Phạm Ngũ Lão／The 350F", desc:"Cụm nhỏ sát nhau, đi bộ dọc theo là ghé hết"},
+    "ThiBa Space 一帶": {name:"Khu vực ThiBa Space", desc:""},
+    "Bến Thành／Q1 老城": {name:"Bến Thành／Phố cổ Quận 1", desc:""},
+    "偏北・老洋樓一帶": {name:"Khu biệt thự cổ phía Bắc", desc:""},
+    "Bình Thạnh": {name:"Bình Thạnh", desc:""},
+    "Phú Nhuận／Đặng Tất": {name:"Phú Nhuận／Đặng Tất", desc:""},
+    "Thảo Điền": {name:"Thảo Điền", desc:"Khu tập trung tiệm bánh, kết hợp ghé cửa hàng旗艦 L'ESPOIR".replace("旗艦","chính")},
+    "其他城市 / 待查": {name:"Thành phố khác / Chưa xác định", desc:"Không nằm trong phạm vi đi bộ ở TP.HCM, hoặc chưa tìm được địa chỉ"}
+  };
+  var UI = {
+    zh:{
+      title:"西貢踩點手冊", subtitle:"胡志明市吃喝購物地點｜真地圖版・需要網路載入街道圖磚",
+      copyText:"複製地點清單文字", exportBtn:"匯出我的行程",
+      tabList:"清單", tabMap:"地圖", tabItinerary:"行程",
+      searchPlaceholder:"搜尋地點、類型或筆記…", emptyMsg:"沒有符合的地點，換個關鍵字試試。",
+      mapOfflineNote:"地圖需要網路連線讀取街道圖磚（OpenStreetMap），離線時會是空白",
+      addDay:"＋ 新增一天", footerText:" 個地點・資料存在這台裝置的瀏覽器裡・把這個檔案傳給旅伴，各自打開記錄",
+      openMap:"開地圖 ↗", officialSite:"官網 ↗", locateOnMap:"在地圖上找",
+      notesRating:"筆記與評分", addToItinerary:"＋ 加入行程", scheduled:"（已排）",
+      newDayAdd:"新增一天並加入", notePlaceholder:"寫點自己的心得、想吃的東西…",
+      markVisited:"標記為已去過：", deleteDay:"刪除 ",
+      noDaysYet:"還沒有任何一天，先在「清單」頁把地點加入行程，或點下面新增一天。",
+      noPlacesThisDay:"這天還沒有地點。", stops:" 站",
+      moveUpPrefix:"把「", moveUpSuffix:"」往前移", moveDownSuffix:"」往後移",
+      removeFromItinerary:"從行程移除",
+      copiedText:"清單文字已複製，貼給旅伴吧", copyFailed:"複製失敗，請改用「匯出我的行程」下載檔案",
+      noClipboard:"這個瀏覽器不支援自動複製，請改用「匯出我的行程」", exported:"已下載，傳給旅伴吧",
+      added:"已加入 ", places:" 處",
+      missingCoords:"沒有精確座標、地圖上未標示：", otherCityNote:"不同城市未納入地圖：", hanoi:"（河內）",
+      mapLoadFail:"地圖元件載入失敗，請確認裝置已連上網路後重新整理頁面。",
+      dayLabel:"Day ",
+      summaryTitle:"西貢踩點手冊 — 我的行程", summaryNoDays:"（還沒排任何一天）",
+      summaryNoPlaces:"　（尚無地點）", summaryNoteLabel:"　  筆記：", summaryMapLabel:"　  地圖：",
+      summaryVisitedHeader:"【已去過】"
+    },
+    vi:{
+      title:"Cẩm Nang Khám Phá Sài Gòn", subtitle:"Địa điểm ăn uống, mua sắm ở TP.HCM ｜ Bản đồ thật・Cần mạng để tải bản đồ",
+      copyText:"Sao chép danh sách địa điểm", exportBtn:"Xuất lịch trình của tôi",
+      tabList:"Danh sách", tabMap:"Bản đồ", tabItinerary:"Lịch trình",
+      searchPlaceholder:"Tìm địa điểm, loại hình hoặc ghi chú…", emptyMsg:"Không tìm thấy địa điểm phù hợp, thử từ khóa khác.",
+      mapOfflineNote:"Bản đồ cần kết nối mạng để tải (OpenStreetMap), sẽ trống khi offline",
+      addDay:"＋ Thêm một ngày", footerText:" địa điểm ・ Dữ liệu lưu trên trình duyệt thiết bị này ・ Gửi file này cho bạn đồng hành để mỗi người tự ghi chú",
+      openMap:"Mở bản đồ ↗", officialSite:"Trang web ↗", locateOnMap:"Tìm trên bản đồ",
+      notesRating:"Ghi chú & đánh giá", addToItinerary:"＋ Thêm vào lịch trình", scheduled:"（đã thêm）",
+      newDayAdd:"Thêm ngày mới và thêm vào", notePlaceholder:"Viết cảm nhận, món muốn ăn…",
+      markVisited:"Đánh dấu đã đi: ", deleteDay:"Xóa ",
+      noDaysYet:"Chưa có ngày nào, hãy thêm địa điểm vào lịch trình ở trang「Danh sách」, hoặc bấm thêm ngày bên dưới.",
+      noPlacesThisDay:"Ngày này chưa có địa điểm.", stops:" điểm",
+      moveUpPrefix:"Di chuyển 「", moveUpSuffix:"」lên trước", moveDownSuffix:"」xuống sau",
+      removeFromItinerary:"Xóa khỏi lịch trình",
+      copiedText:"Đã sao chép danh sách, gửi cho bạn đồng hành nhé", copyFailed:"Sao chép thất bại, vui lòng dùng「Xuất lịch trình」để tải file",
+      noClipboard:"Trình duyệt này không hỗ trợ sao chép tự động, vui lòng dùng「Xuất lịch trình」", exported:"Đã tải xuống, gửi cho bạn đồng hành nhé",
+      added:"Đã thêm vào ", places:" địa điểm",
+      missingCoords:"Không có tọa độ chính xác, chưa hiển thị trên bản đồ: ", otherCityNote:"Thành phố khác không có trên bản đồ: ", hanoi:"（Hà Nội）",
+      mapLoadFail:"Tải bản đồ thất bại, vui lòng kiểm tra kết nối mạng rồi tải lại trang.",
+      dayLabel:"Ngày ",
+      summaryTitle:"Cẩm Nang Khám Phá Sài Gòn — Lịch trình của tôi", summaryNoDays:"（Chưa xếp ngày nào）",
+      summaryNoPlaces:"　（Chưa có địa điểm）", summaryNoteLabel:"　  Ghi chú：", summaryMapLabel:"　  Bản đồ：",
+      summaryVisitedHeader:"【Đã đi】"
+    }
+  };
+  function t(key){ return UI[lang][key]; }
+  function typeText(item){ return lang === "vi" ? (VI_TYPE[item.type] || item.type) : item.type; }
+  function noteText(item){ return lang === "vi" ? (VI_NOTE[item.name] || "") : item.note; }
+  function areaName(group){ return lang === "vi" ? (VI_AREA[group.area] ? VI_AREA[group.area].name : group.area) : group.area; }
+  function areaDesc(group){ return lang === "vi" ? (VI_AREA[group.area] ? VI_AREA[group.area].desc : "") : group.desc; }
+
   var AREA_COLORS = [
     ["#1F6F5C","#57C7A6"],
     ["#B9812C","#E4AC55"],
@@ -389,7 +503,7 @@
   function scheduledDayLabel(placeId){
     for(var i=0;i<state.days.length;i++){
       var d = state.days[i];
-      if((state.itinerary[d.id]||[]).indexOf(placeId) > -1) return d.label;
+      if((state.itinerary[d.id]||[]).indexOf(placeId) > -1) return dayLabelText(d);
     }
     return null;
   }
@@ -417,24 +531,26 @@
     }
   }
 
+  function dayLabelText(day){ return t("dayLabel") + (day.num != null ? day.num : (state.days.indexOf(day)+1)); }
+
   function buildDaySelect(placeId){
     var sel = document.createElement("select");
     sel.className = "daypick";
     var optNone = document.createElement("option");
     optNone.value = "";
-    optNone.textContent = "＋ 加入行程";
+    optNone.textContent = t("addToItinerary");
     sel.appendChild(optNone);
     state.days.forEach(function(d){
       var opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = d.label;
+      opt.textContent = dayLabelText(d);
       var already = (state.itinerary[d.id]||[]).indexOf(placeId) > -1;
-      if(already){ opt.textContent += "（已排）"; }
+      if(already){ opt.textContent += t("scheduled"); }
       sel.appendChild(opt);
     });
     var optNew = document.createElement("option");
     optNew.value = "__new__";
-    optNew.textContent = "新增一天並加入";
+    optNew.textContent = t("newDayAdd");
     sel.appendChild(optNew);
 
     sel.addEventListener("change", function(){
@@ -443,12 +559,13 @@
       var dayId = v;
       if(v === "__new__"){
         dayId = "day-" + (state.nextDay++);
-        state.days.push({id:dayId, label:"Day " + (state.days.length + 1)});
+        state.days.push({id:dayId, num: state.days.length + 1});
       }
       if(!state.itinerary[dayId]) state.itinerary[dayId] = [];
       if(state.itinerary[dayId].indexOf(placeId) === -1){
         state.itinerary[dayId].push(placeId);
-        toast("已加入 " + (state.days.filter(function(d){return d.id===dayId;})[0]||{}).label);
+        var d = state.days.filter(function(d){return d.id===dayId;})[0];
+        toast(t("added") + (d ? dayLabelText(d) : ""));
       }
       save();
       sel.value = "";
@@ -470,19 +587,20 @@
       var head = document.createElement("div");
       head.className = "area-head";
       var h2 = document.createElement("h2");
-      h2.textContent = group.area;
+      h2.textContent = areaName(group);
       h2.style.borderColor = areaColor(gi);
       var count = document.createElement("span");
       count.className = "area-count mono";
-      count.textContent = group.items.length + " 處";
+      count.textContent = group.items.length + t("places");
       head.appendChild(h2);
       head.appendChild(count);
       sec.appendChild(head);
 
-      if(group.desc){
+      var descText = areaDesc(group);
+      if(descText){
         var desc = document.createElement("p");
         desc.className = "area-desc";
-        desc.textContent = group.desc;
+        desc.textContent = descText;
         sec.appendChild(desc);
       }
 
@@ -491,14 +609,14 @@
         var card = document.createElement("div");
         card.className = "card" + (state.visited[id] ? " done" : "");
         card.id = "card-" + id;
-        card.dataset.search = (item.name + " " + item.type + " " + item.note).toLowerCase();
+        card.dataset.search = (item.name + " " + item.type + " " + item.note + " " + (VI_TYPE[item.type]||"") + " " + (VI_NOTE[item.name]||"")).toLowerCase();
 
         var top = document.createElement("div");
         top.className = "card-top";
 
         var check = document.createElement("button");
         check.className = "check";
-        check.setAttribute("aria-label", "標記為已去過：" + item.name);
+        check.setAttribute("aria-label", t("markVisited") + item.name);
         check.setAttribute("aria-pressed", state.visited[id] ? "true" : "false");
         var checkRing = document.createElement("span");
         checkRing.className = "check-ring";
@@ -524,7 +642,7 @@
         nameEl.textContent = item.name;
         var tagEl = document.createElement("span");
         tagEl.className = "tag";
-        tagEl.textContent = item.type;
+        tagEl.textContent = typeText(item);
         tagEl.style.borderColor = areaColor(gi);
         nameRow.appendChild(nameEl);
         nameRow.appendChild(tagEl);
@@ -537,10 +655,11 @@
         }
         body.appendChild(nameRow);
 
-        if(item.note){
+        var noteTxt = noteText(item);
+        if(noteTxt){
           var noteEl = document.createElement("p");
           noteEl.className = "card-note";
-          noteEl.textContent = item.note;
+          noteEl.textContent = noteTxt;
           body.appendChild(noteEl);
         }
 
@@ -551,13 +670,13 @@
         mapA.href = item.link;
         mapA.target = "_blank";
         mapA.rel = "noopener noreferrer";
-        mapA.textContent = item.link.indexOf("maps.app.goo.gl") > -1 ? "開地圖 ↗" : "官網 ↗";
+        mapA.textContent = item.link.indexOf("maps.app.goo.gl") > -1 ? t("openMap") : t("officialSite");
         actions.appendChild(mapA);
 
         if(item.lat != null && !item.otherCity){
           var locateBtn = document.createElement("button");
           locateBtn.className = "ghostbtn";
-          locateBtn.textContent = "在地圖上找";
+          locateBtn.textContent = t("locateOnMap");
           locateBtn.addEventListener("click", function(){
             document.querySelector('.tab[data-view="map"]').click();
             setTimeout(function(){
@@ -573,7 +692,7 @@
         var detailBtn = document.createElement("button");
         detailBtn.className = "ghostbtn";
         var hasContent = state.rating[id] || (state.notes[id] && state.notes[id].trim());
-        detailBtn.textContent = (hasContent ? "★ " : "") + "筆記與評分";
+        detailBtn.textContent = (hasContent ? "★ " : "") + t("notesRating");
         actions.appendChild(detailBtn);
 
         actions.appendChild(buildDaySelect(id));
@@ -588,7 +707,7 @@
         detail.appendChild(starsWrap);
         var textarea = document.createElement("textarea");
         textarea.className = "notearea";
-        textarea.placeholder = "寫點自己的心得、想吃的東西…";
+        textarea.placeholder = t("notePlaceholder");
         textarea.value = state.notes[id] || "";
         textarea.addEventListener("input", function(){
           state.notes[id] = textarea.value;
@@ -611,7 +730,7 @@
 
       var chip = document.createElement("button");
       chip.className = "chip";
-      chip.textContent = group.area;
+      chip.textContent = areaName(group);
       chip.addEventListener("click", function(){
         document.getElementById("area-" + gi).scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
       });
@@ -674,9 +793,43 @@
     tileLayer = L.tileLayer(tileUrl(), {maxZoom: 19, attribution: CARTO_ATTR}).addTo(leafletMap);
   }
 
+  function popupHtml(p){
+    var html = '<span class="popup-name">' + p.name + '</span>' +
+      '<span class="tag">' + typeText(p) + '</span>';
+    var n = noteText(p);
+    if(n) html += '<div class="popup-note">' + n + '</div>';
+    html += '<a class="popup-link" href="' + p.link + '" target="_blank" rel="noopener noreferrer">' +
+      (p.link.indexOf("maps.app.goo.gl") > -1 ? t("openMap") : t("officialSite")) + '</a>';
+    return html;
+  }
+
+  function renderMapChrome(){
+    var legend = document.getElementById("mapLegend");
+    legend.innerHTML = "";
+    DATA.forEach(function(group, gi){
+      var hasCoord = group.items.some(function(it){ return it.lat != null && !it.otherCity; });
+      if(!hasCoord) return;
+      var li = document.createElement("div");
+      li.className = "legend-item";
+      var dot = document.createElement("span");
+      dot.className = "legend-dot";
+      dot.style.background = areaColor(gi);
+      li.appendChild(dot);
+      li.appendChild(document.createTextNode(areaName(group)));
+      legend.appendChild(li);
+    });
+
+    var missing = PLACES.filter(function(p){ return p.lat == null; }).map(function(p){return p.name;});
+    var other = PLACES.filter(function(p){ return p.otherCity; }).map(function(p){return p.name + t("hanoi");});
+    var noteParts = [];
+    if(missing.length) noteParts.push(t("missingCoords") + missing.join("、"));
+    if(other.length) noteParts.push(t("otherCityNote") + other.join("、"));
+    document.getElementById("mapNote").textContent = noteParts.join("　");
+  }
+
   function initOrRefreshMap(){
     if(!window.L){
-      document.getElementById("mapNote").textContent = "地圖元件載入失敗，請確認裝置已連上網路後重新整理頁面。";
+      document.getElementById("mapNote").textContent = t("mapLoadFail");
       return;
     }
     if(!leafletMap){
@@ -690,39 +843,14 @@
         var marker = L.marker([p.lat, p.lng], {
           icon: pinIcon(areaColor(p.groupIndex), !!state.visited[p.id])
         }).addTo(leafletMap);
-
-        var html = '<span class="popup-name">' + p.name + '</span>' +
-          '<span class="tag">' + p.type + '</span>';
-        if(p.note) html += '<div class="popup-note">' + p.note + '</div>';
-        html += '<a class="popup-link" href="' + p.link + '" target="_blank" rel="noopener noreferrer">開地圖 ↗</a>';
-        marker.bindPopup(html);
+        marker.bindPopup(popupHtml(p));
         marker.on("click", function(){
           leafletMap.setView([p.lat, p.lng], Math.max(leafletMap.getZoom(), 17), {animate:true});
         });
         p.marker = marker;
       });
 
-      var legend = document.getElementById("mapLegend");
-      legend.innerHTML = "";
-      DATA.forEach(function(group, gi){
-        var hasCoord = group.items.some(function(it){ return it.lat != null && !it.otherCity; });
-        if(!hasCoord) return;
-        var li = document.createElement("div");
-        li.className = "legend-item";
-        var dot = document.createElement("span");
-        dot.className = "legend-dot";
-        dot.style.background = areaColor(gi);
-        li.appendChild(dot);
-        li.appendChild(document.createTextNode(group.area));
-        legend.appendChild(li);
-      });
-
-      var missing = PLACES.filter(function(p){ return p.lat == null; }).map(function(p){return p.name;});
-      var other = PLACES.filter(function(p){ return p.otherCity; }).map(function(p){return p.name + "（河內）";});
-      var noteParts = [];
-      if(missing.length) noteParts.push("沒有精確座標、地圖上未標示：" + missing.join("、"));
-      if(other.length) noteParts.push("不同城市未納入地圖：" + other.join("、"));
-      document.getElementById("mapNote").textContent = noteParts.join("　");
+      renderMapChrome();
     }
     setTimeout(function(){ leafletMap.invalidateSize(); }, 50);
   }
@@ -730,7 +858,7 @@
   function dimMarkers(q){
     mapPlaces.forEach(function(p){
       if(!p.marker) return;
-      var match = !q || (p.name + " " + p.type + " " + p.note).toLowerCase().indexOf(q) > -1;
+      var match = !q || (p.name + " " + p.type + " " + p.note + " " + (VI_TYPE[p.type]||"") + " " + (VI_NOTE[p.name]||"")).toLowerCase().indexOf(q) > -1;
       p.marker.setOpacity(match ? 1 : 0.2);
     });
   }
@@ -742,7 +870,7 @@
     if(!state.days.length){
       var p = document.createElement("p");
       p.className = "day-empty";
-      p.textContent = "還沒有任何一天，先在「清單」頁把地點加入行程，或點下面新增一天。";
+      p.textContent = t("noDaysYet");
       daysEl.appendChild(p);
     }
     state.days.forEach(function(day){
@@ -751,15 +879,15 @@
       var head = document.createElement("div");
       head.className = "day-head";
       var h3 = document.createElement("h3");
-      h3.textContent = day.label;
+      h3.textContent = dayLabelText(day);
       var cnt = document.createElement("span");
       cnt.className = "day-count mono";
       var ids = state.itinerary[day.id] || [];
-      cnt.textContent = ids.length + " 站";
+      cnt.textContent = ids.length + t("stops");
       var del = document.createElement("button");
       del.className = "day-del";
       del.textContent = "✕";
-      del.setAttribute("aria-label", "刪除 " + day.label);
+      del.setAttribute("aria-label", t("deleteDay") + dayLabelText(day));
       del.addEventListener("click", function(){
         state.days = state.days.filter(function(d){return d.id !== day.id;});
         delete state.itinerary[day.id];
@@ -775,7 +903,7 @@
       if(!ids.length){
         var empty = document.createElement("p");
         empty.className = "day-empty";
-        empty.textContent = "這天還沒有地點。";
+        empty.textContent = t("noPlacesThisDay");
         card.appendChild(empty);
       }
 
@@ -793,7 +921,7 @@
         var up = document.createElement("button");
         up.className = "miniBtn";
         up.textContent = "↑";
-        up.setAttribute("aria-label", "把「" + place.name + "」往前移");
+        up.setAttribute("aria-label", t("moveUpPrefix") + place.name + t("moveUpSuffix"));
         up.disabled = idx === 0;
         up.addEventListener("click", function(){
           var arr = state.itinerary[day.id];
@@ -804,7 +932,7 @@
         var down = document.createElement("button");
         down.className = "miniBtn";
         down.textContent = "↓";
-        down.setAttribute("aria-label", "把「" + place.name + "」往後移");
+        down.setAttribute("aria-label", t("moveUpPrefix") + place.name + t("moveDownSuffix"));
         down.disabled = idx === ids.length - 1;
         down.addEventListener("click", function(){
           var arr = state.itinerary[day.id];
@@ -815,7 +943,7 @@
         var rm = document.createElement("button");
         rm.className = "miniBtn";
         rm.textContent = "✕";
-        rm.setAttribute("aria-label", "從行程移除");
+        rm.setAttribute("aria-label", t("removeFromItinerary"));
         rm.addEventListener("click", function(){
           state.itinerary[day.id] = state.itinerary[day.id].filter(function(id){return id !== placeId;});
           save(); renderItinerary(); renderList();
@@ -833,7 +961,7 @@
 
   document.getElementById("addDayBtn").addEventListener("click", function(){
     var dayId = "day-" + (state.nextDay++);
-    state.days.push({id:dayId, label:"Day " + (state.days.length + 1)});
+    state.days.push({id:dayId, num: state.days.length + 1});
     state.itinerary[dayId] = [];
     save();
     renderItinerary();
@@ -841,27 +969,27 @@
 
   /* ---------------- SHARE (local-file friendly) ---------------- */
   function buildSummaryText(){
-    var lines = ["西貢踩點手冊 — 我的行程", ""];
+    var lines = [t("summaryTitle"), ""];
     if(!state.days.length){
-      lines.push("（還沒排任何一天）");
+      lines.push(t("summaryNoDays"));
     }
     state.days.forEach(function(day){
-      lines.push("【" + day.label + "】");
+      lines.push("【" + dayLabelText(day) + "】");
       var ids = state.itinerary[day.id] || [];
-      if(!ids.length) lines.push("　（尚無地點）");
+      if(!ids.length) lines.push(t("summaryNoPlaces"));
       ids.forEach(function(id){
         var place = placeById[id];
         if(!place) return;
         var star = state.rating[id] ? " " + "★".repeat(state.rating[id]) : "";
-        lines.push("　- " + place.name + "（" + place.type + "）" + star);
-        if(state.notes[id] && state.notes[id].trim()) lines.push("　  筆記：" + state.notes[id].trim());
-        lines.push("　  地圖：" + place.link);
+        lines.push("　- " + place.name + "（" + typeText(place) + "）" + star);
+        if(state.notes[id] && state.notes[id].trim()) lines.push(t("summaryNoteLabel") + state.notes[id].trim());
+        lines.push(t("summaryMapLabel") + place.link);
       });
       lines.push("");
     });
     var visitedList = PLACES.filter(function(p){ return state.visited[p.id]; });
     if(visitedList.length){
-      lines.push("【已去過】");
+      lines.push(t("summaryVisitedHeader"));
       visitedList.forEach(function(p){ lines.push("　- " + p.name); });
     }
     return lines.join("\n");
@@ -871,12 +999,12 @@
     var text = buildSummaryText();
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){
-        toast("清單文字已複製，貼給旅伴吧");
+        toast(t("copiedText"));
       }).catch(function(){
-        toast("複製失敗，請改用「匯出我的行程」下載檔案");
+        toast(t("copyFailed"));
       });
     }else{
-      toast("這個瀏覽器不支援自動複製，請改用「匯出我的行程」");
+      toast(t("noClipboard"));
     }
   });
 
@@ -891,7 +1019,7 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-    toast("已下載，傳給旅伴吧");
+    toast(t("exported"));
   });
 
   /* ---------------- theme change repaint ---------------- */
@@ -912,6 +1040,38 @@
     });
   }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 
+  /* ---------------- LANG TOGGLE ---------------- */
+  function applyStaticLang(){
+    document.getElementById("pageTitle").textContent = t("title");
+    document.getElementById("pageSubtitle").textContent = t("subtitle");
+    document.getElementById("copyTextLabel").textContent = t("copyText");
+    document.getElementById("exportLabel").textContent = t("exportBtn");
+    document.getElementById("tabList").textContent = t("tabList");
+    document.getElementById("tabMap").textContent = t("tabMap");
+    document.getElementById("tabItinerary").textContent = t("tabItinerary");
+    document.getElementById("search").placeholder = t("searchPlaceholder");
+    document.getElementById("emptyMsg").textContent = t("emptyMsg");
+    document.getElementById("mapOfflineNote").textContent = t("mapOfflineNote");
+    document.getElementById("addDayBtn").textContent = t("addDay");
+    document.getElementById("footerText").textContent = t("footerText");
+    document.getElementById("langBtn").textContent = lang === "zh" ? "VI" : "中文";
+    document.documentElement.lang = lang === "zh" ? "zh-Hant" : "vi";
+  }
+
+  document.getElementById("langBtn").addEventListener("click", function(){
+    lang = lang === "zh" ? "vi" : "zh";
+    localStorage.setItem(LANG_KEY, lang);
+    applyStaticLang();
+    renderList();
+    renderItinerary();
+    if(leafletMap){
+      mapPlaces.forEach(function(p){ if(p.marker) p.marker.setPopupContent(popupHtml(p)); });
+      renderMapChrome();
+    }
+    applySearch();
+  });
+
+  applyStaticLang();
   renderList();
   renderItinerary();
 
