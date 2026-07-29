@@ -157,7 +157,7 @@
   .cute-pin.done{opacity:0.5;}
   .leaflet-popup-content-wrapper{background:var(--paper-raised);color:var(--ink);border-radius:14px;}
   .leaflet-popup-tip{background:var(--paper-raised);}
-  .leaflet-popup-content{font-size:0.82rem;margin:10px 12px;line-height:1.5;}
+  .leaflet-popup-content{font-size:0.82rem;margin:10px 22px 10px 12px;line-height:1.5;}
   .popup-name{font-family:Georgia,"Iowan Old Style","Noto Serif TC",serif;font-weight:700;font-size:0.92rem;display:block;margin-bottom:3px;}
   .popup-note{color:var(--done-ink);font-size:0.78rem;margin-top:3px;}
   .popup-link{color:var(--brass);font-size:0.76rem;text-decoration:none;display:inline-block;margin-top:5px;}
@@ -843,7 +843,7 @@
         var marker = L.marker([p.lat, p.lng], {
           icon: pinIcon(areaColor(p.groupIndex), !!state.visited[p.id])
         }).addTo(leafletMap);
-        marker.bindPopup(popupHtml(p));
+        marker.bindPopup(popupHtml(p), {minWidth:180, maxWidth:240});
         marker.on("click", function(){
           leafletMap.setView([p.lat, p.lng], Math.max(leafletMap.getZoom(), 17), {animate:true});
         });
