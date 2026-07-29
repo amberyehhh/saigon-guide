@@ -146,12 +146,6 @@
   }
   .leaflet-container{font-family:inherit;}
   .leaflet-control-zoom a{width:40px !important;height:40px !important;line-height:40px !important;font-size:1.1rem !important;}
-  .leaflet-tile-pane{filter:saturate(0.75) brightness(1.08) contrast(0.92);}
-  .pastel-overlay{
-    position:absolute;inset:0;z-index:399;pointer-events:none;
-    background:linear-gradient(135deg, rgba(255,214,232,0.32), rgba(214,238,255,0.22) 45%, rgba(255,245,214,0.28));
-    mix-blend-mode:soft-light;
-  }
   .cute-pin{
     width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
     border:2.5px solid #fff;box-shadow:0 2px 5px rgba(80,50,60,0.28);
@@ -344,12 +338,6 @@
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   }
   function areaColor(i){ return AREA_COLORS[i % AREA_COLORS.length][isDark()?1:0]; }
-  function pastelize(hex){
-    var n = parseInt(hex.slice(1), 16);
-    var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-    var mix = function(c){ return Math.round(c * 0.62 + 255 * 0.38); };
-    return "rgb(" + mix(r) + "," + mix(g) + "," + mix(b) + ")";
-  }
   function pinIcon(color, done){
     return L.divIcon({
       className: "",
@@ -523,7 +511,7 @@
           check.setAttribute("aria-pressed", state.visited[id] ? "true" : "false");
           checkRing.textContent = state.visited[id] ? "✓" : "";
           updateProgress();
-          if(item.marker) item.marker.setIcon(pinIcon(pastelize(areaColor(item.groupIndex)), !!state.visited[id]));
+          if(item.marker) item.marker.setIcon(pinIcon(areaColor(item.groupIndex), !!state.visited[id]));
         });
 
         var body = document.createElement("div");
@@ -694,16 +682,13 @@
     if(!leafletMap){
       leafletMap = L.map("leafletMap", {scrollWheelZoom:true});
       swapTileLayer();
-      var overlay = document.createElement("div");
-      overlay.className = "pastel-overlay";
-      document.getElementById("leafletMap").appendChild(overlay);
 
       var bounds = L.latLngBounds(mapPlaces.map(function(p){ return [p.lat, p.lng]; }));
       leafletMap.fitBounds(bounds, {padding:[24,24]});
 
       mapPlaces.forEach(function(p){
         var marker = L.marker([p.lat, p.lng], {
-          icon: pinIcon(pastelize(areaColor(p.groupIndex)), !!state.visited[p.id])
+          icon: pinIcon(areaColor(p.groupIndex), !!state.visited[p.id])
         }).addTo(leafletMap);
 
         var html = '<span class="popup-name">' + p.name + '</span>' +
@@ -915,7 +900,7 @@
       renderList();
       swapTileLayer();
       mapPlaces.forEach(function(p){
-        if(p.marker) p.marker.setIcon(pinIcon(pastelize(areaColor(p.groupIndex)), !!state.visited[p.id]));
+        if(p.marker) p.marker.setIcon(pinIcon(areaColor(p.groupIndex), !!state.visited[p.id]));
       });
     });
   }
@@ -923,7 +908,7 @@
     renderList();
     swapTileLayer();
     mapPlaces.forEach(function(p){
-      if(p.marker) p.marker.setIcon(pinIcon(pastelize(areaColor(p.groupIndex)), !!state.visited[p.id]));
+      if(p.marker) p.marker.setIcon(pinIcon(areaColor(p.groupIndex), !!state.visited[p.id]));
     });
   }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 
